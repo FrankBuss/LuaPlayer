@@ -2,8 +2,6 @@
 
 http://www.luaplayer.org/
 
-IRC: #luaplayer on http://freenode.net/
-
 ## What is Lua Player?
 
 Lua Player is a script player for the Sony PSP. With it, you can run applications written in the language Lua. Writing Lua code is both faster and easier than writing for the PSP directly.
