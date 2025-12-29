@@ -1,8 +1,4 @@
 #include <malloc.h>
-#include <pspdisplay.h>
-#include <psputils.h>
-#include <pspgu.h>
-#include <pspgum.h>
 #include "luaplayer.h"
 
 #include "graphics.h"
@@ -20,23 +16,23 @@ static int lua_sceGuClearColor(lua_State *L) {
 }
 
 static int lua_sceGuClearDepth(lua_State *L) {
-	int argc = lua_gettop(L); 
-	if (argc != 1) return luaL_error(L, "wrong number of arguments"); 
-	sceGuClearDepth(luaL_checkint(L, 1));
+	int argc = lua_gettop(L);
+	if (argc != 1) return luaL_error(L, "wrong number of arguments");
+	sceGuClearDepth((int)luaL_checknumber(L, 1));
 	return 0;
 }
 
 static int lua_sceGuClear(lua_State *L) {
-	int argc = lua_gettop(L); 
-	if (argc != 1) return luaL_error(L, "wrong number of arguments"); 
-	sceGuClear(luaL_checkint(L, 1));
+	int argc = lua_gettop(L);
+	if (argc != 1) return luaL_error(L, "wrong number of arguments");
+	sceGuClear((int)luaL_checknumber(L, 1));
 	return 0;
 }
 
 static int lua_sceGumMatrixMode(lua_State *L) {
-	int argc = lua_gettop(L); 
-	if (argc != 1) return luaL_error(L, "wrong number of arguments"); 
-	sceGumMatrixMode(luaL_checkint(L, 1));
+	int argc = lua_gettop(L);
+	if (argc != 1) return luaL_error(L, "wrong number of arguments");
+	sceGumMatrixMode((int)luaL_checknumber(L, 1));
 	return 0;
 }
 
@@ -85,9 +81,9 @@ static int lua_sceGuTexImage(lua_State *L) {
 }
 
 static int lua_sceGuTexFunc(lua_State *L) {
-	int argc = lua_gettop(L); 
-	if (argc != 2) return luaL_error(L, "wrong number of arguments"); 
-	sceGuTexFunc(luaL_checkint(L, 1), luaL_checkint(L, 2));
+	int argc = lua_gettop(L);
+	if (argc != 2) return luaL_error(L, "wrong number of arguments");
+	sceGuTexFunc((int)luaL_checknumber(L, 1), (int)luaL_checknumber(L, 2));
 	return 0;
 }
 
@@ -99,9 +95,9 @@ static int lua_sceGuTexEnvColor(lua_State *L) {
 }
 
 static int lua_sceGuTexFilter(lua_State *L) {
-	int argc = lua_gettop(L); 
-	if (argc != 2) return luaL_error(L, "wrong number of arguments"); 
-	sceGuTexFilter(luaL_checkint(L, 1), luaL_checkint(L, 2));
+	int argc = lua_gettop(L);
+	if (argc != 2) return luaL_error(L, "wrong number of arguments");
+	sceGuTexFilter((int)luaL_checknumber(L, 1), (int)luaL_checknumber(L, 2));
 	return 0;
 }
 
@@ -134,66 +130,66 @@ static int lua_sceGuAmbient(lua_State *L) {
 }
 
 static int lua_sceGuEnable(lua_State *L) {
-	int argc = lua_gettop(L); 
-	if (argc != 1) return luaL_error(L, "wrong number of arguments"); 
-	sceGuEnable(luaL_checkint(L, 1));
+	int argc = lua_gettop(L);
+	if (argc != 1) return luaL_error(L, "wrong number of arguments");
+	sceGuEnable((int)luaL_checknumber(L, 1));
 	return 0;
 }
 
 static int lua_sceGuDisable(lua_State *L) {
-	int argc = lua_gettop(L); 
-	if (argc != 1) return luaL_error(L, "wrong number of arguments"); 
-	sceGuDisable(luaL_checkint(L, 1));
+	int argc = lua_gettop(L);
+	if (argc != 1) return luaL_error(L, "wrong number of arguments");
+	sceGuDisable((int)luaL_checknumber(L, 1));
 	return 0;
 }
 
 static int lua_sceGuBlendFunc(lua_State *L) {
-	int argc = lua_gettop(L); 
-	if (argc != 5) return luaL_error(L, "wrong number of arguments"); 
-	sceGuBlendFunc(luaL_checkint(L, 1), luaL_checkint(L, 2), luaL_checkint(L, 3), luaL_checkint(L, 4), luaL_checkint(L, 5));
+	int argc = lua_gettop(L);
+	if (argc != 5) return luaL_error(L, "wrong number of arguments");
+	sceGuBlendFunc((int)luaL_checknumber(L, 1), (int)luaL_checknumber(L, 2), (int)luaL_checknumber(L, 3), (int)luaL_checknumber(L, 4), (int)luaL_checknumber(L, 5));
 	return 0;
 }
 
 static int lua_sceGuLight(lua_State *L) {
-	int argc = lua_gettop(L); 
+	int argc = lua_gettop(L);
 	if (argc != 6) return luaL_error(L, "wrong number of arguments");
 	ScePspFVector3 v;
 	v.x = luaL_checknumber(L, 4);
 	v.y = luaL_checknumber(L, 5);
 	v.z = luaL_checknumber(L, 6);
-	sceGuLight(luaL_checkint(L, 1), luaL_checkint(L, 2), luaL_checkint(L, 3), &v);
+	sceGuLight((int)luaL_checknumber(L, 1), (int)luaL_checknumber(L, 2), (int)luaL_checknumber(L, 3), &v);
 	return 0;
 }
 
 static int lua_sceGuLightAtt(lua_State *L) {
-	int argc = lua_gettop(L); 
+	int argc = lua_gettop(L);
 	if (argc != 4) return luaL_error(L, "wrong number of arguments");
-	sceGuLightAtt(luaL_checkint(L, 1), luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4));
+	sceGuLightAtt((int)luaL_checknumber(L, 1), luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4));
 	return 0;
 }
 
 static int lua_sceGuLightColor(lua_State *L) {
-	int argc = lua_gettop(L); 
+	int argc = lua_gettop(L);
 	if (argc != 3) return luaL_error(L, "wrong number of arguments");
-	sceGuLightColor(luaL_checkint(L, 1), luaL_checkint(L, 2), *toColor(L, 3));
+	sceGuLightColor((int)luaL_checknumber(L, 1), (int)luaL_checknumber(L, 2), *toColor(L, 3));
 	return 0;
 }
 
 static int lua_sceGuLightMode(lua_State *L) {
-	int argc = lua_gettop(L); 
+	int argc = lua_gettop(L);
 	if (argc != 1) return luaL_error(L, "wrong number of arguments");
-	sceGuLightMode(luaL_checkint(L, 1));
+	sceGuLightMode((int)luaL_checknumber(L, 1));
 	return 0;
 }
 
 static int lua_sceGuLightSpot(lua_State *L) {
-	int argc = lua_gettop(L); 
+	int argc = lua_gettop(L);
 	if (argc != 6) return luaL_error(L, "wrong number of arguments");
 	ScePspFVector3 v;
 	v.x = luaL_checknumber(L, 2);
 	v.y = luaL_checknumber(L, 3);
 	v.z = luaL_checknumber(L, 4);
-	sceGuLightSpot(luaL_checkint(L, 1), &v, luaL_checknumber(L, 5), luaL_checknumber(L, 6));
+	sceGuLightSpot((int)luaL_checknumber(L, 1), &v, luaL_checknumber(L, 5), luaL_checknumber(L, 6));
 	return 0;
 }
 
@@ -201,10 +197,10 @@ static int lua_sceGumDrawArray(lua_State *L) {
 	int argc = lua_gettop(L);
 	if (argc != 3) return luaL_error(L, "wrong number of arguments");
 
-	int prim = luaL_checkint(L, 1);
-	int vtype = luaL_checkint(L, 2);
+	int prim = (int)luaL_checknumber(L, 1);
+	int vtype = (int)luaL_checknumber(L, 2);
 	if (lua_type(L, 3) != LUA_TTABLE) return luaL_error(L, "vertices table missing");
-	int n = luaL_getn(L, 3);
+	int n = (int)lua_rawlen(L, 3);
 
 	int quads = 0;
 	int colorLuaIndex = -1;
@@ -222,7 +218,7 @@ static int lua_sceGumDrawArray(lua_State *L) {
 	for (i = 1; i <= n; ++i) {
 		// get vertice table
 		lua_rawgeti(L, 3, i);
-		int n2 = luaL_getn(L, -1);
+		int n2 = (int)lua_rawlen(L, -1);
 		if (n2 != quads) {
 			free(vertices);
 			return luaL_error(L, "wrong number of vertex components");
@@ -266,7 +262,7 @@ static int lua_end3d(lua_State *L) {
 	return 0;
 }
 
-static const luaL_reg Gu_functions[] = {
+static const luaL_Reg Gu_functions[] = {
 	{"clearColor", lua_sceGuClearColor},
 	{"clearDepth", lua_sceGuClearDepth},
 	{"clear", lua_sceGuClear},
@@ -291,7 +287,7 @@ static const luaL_reg Gu_functions[] = {
   {0, 0}
 };
 
-static const luaL_reg Gum_functions[] = {
+static const luaL_Reg Gum_functions[] = {
 	{"matrixMode", lua_sceGumMatrixMode},
 	{"loadIdentity", lua_sceGumLoadIdentity},
 	{"perspective", lua_sceGumPerspective},
@@ -302,16 +298,17 @@ static const luaL_reg Gum_functions[] = {
 };
 
 void lua3D_init(lua_State *L) {
-	luaL_openlib(L, "Gu", Gu_functions, 0);
-	luaL_openlib(L, "Gum", Gum_functions, 0);
+	luaL_newlib(L, Gu_functions);
+	lua_setglobal(L, "Gu");
+	luaL_newlib(L, Gum_functions);
+	lua_setglobal(L, "Gum");
 
 #define GU_CONSTANT(name)\
 	lua_pushstring(L, #name);\
 	lua_pushnumber(L, GU_##name);\
 	lua_settable(L, -3);
 
-	lua_pushstring(L, "Gu");
-	lua_gettable(L, LUA_GLOBALSINDEX);
+	lua_getglobal(L, "Gu");
 	GU_CONSTANT(PI)
 	GU_CONSTANT(FALSE)
 	GU_CONSTANT(TRUE)

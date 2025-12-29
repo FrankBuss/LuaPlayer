@@ -2,10 +2,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <pspkernel.h>
-#include <pspdebug.h>
-#include <pspdisplay.h>
-
 #include "luaplayer.h"
 
 
@@ -14,14 +10,17 @@ static lua_State *L;
 
 const char * runScript(const char* script, bool isStringBuffer )
 {
-	L = lua_open();
-	
+	L = luaL_newstate();
+
 	// Standard libraries
 	luaL_openlibs(L);
 
+	// Add table.getn for Lua 5.0 compatibility (removed in 5.1+)
+	luaL_dostring(L, "table.getn = function(t) return #t end");
+
 	// luasystem.cpp defines our loadlib.
 	// luaopen_loadlib(L);
-	
+
 	// Modules
 	luaSound_init(L);
 	luaControls_init(L);

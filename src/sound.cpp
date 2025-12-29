@@ -1,46 +1,45 @@
 #include <stdlib.h>
-#include <malloc.h>
-#include <psputils.h>
-#include "mikmod.h"
+#include <string.h>
+#include <mikmod.h>
 
 #include "sound.h"
 
 #define MAX_MUSIC_CHAN 128
 #define MAX_SFX_CHAN 32
-static UNIMOD *musichandle = NULL;
+static MODULE *musichandle = NULL;
 
-//Internals. Implement this somewhere else to get error reporting lua-style.
-void my_mikmod_error_handler(void)
+// Error handler for MikMod
+static void my_mikmod_error_handler(void)
 {
 	printf("LuaPlayer's Mikmod has a critical error:\n");
-	printf("_mm_critical %d\n", _mm_critical);
-	printf("_mm_errno %d\n", _mm_errno);
-	printf("%s\n", _mm_errmsg[_mm_errno]);
-	return;
+	printf("MikMod error: %s\n", MikMod_strerror(MikMod_errno));
 }
-extern void my_error_handler();
 
-// For internal Lua use
+// For internal use
 
-void initMikmod() {
-	_mm_RegisterErrorHandler(my_mikmod_error_handler);
+void initSound(void) {
+	MikMod_RegisterErrorHandler(my_mikmod_error_handler);
 	MikMod_RegisterAllLoaders();
 	MikMod_RegisterAllDrivers();
-	md_mode = DMODE_16BITS|DMODE_STEREO|DMODE_SOFT_SNDFX|DMODE_SOFT_MUSIC; 
+	md_mode = DMODE_16BITS | DMODE_STEREO | DMODE_SOFT_SNDFX | DMODE_SOFT_MUSIC;
 	md_reverb = 0;
 	md_pansep = 128;
 	md_volume = 128;
 	md_musicvolume = 96;
 	md_sndfxvolume = 128;
 	musichandle = NULL;
-	MikMod_Init();
+	if (MikMod_Init("")) {
+		fprintf(stderr, "MikMod init failed: %s\n", MikMod_strerror(MikMod_errno));
+		return;
+	}
 	MikMod_SetNumVoices(MAX_MUSIC_CHAN, MAX_SFX_CHAN);
-	Player_Start(0);
+	MikMod_EnableOutput();
 }
 
-void unloadMikmod() {
-	if(musichandle) MikMod_FreeSong(musichandle);
-	Player_Stop();
+void uninitSound(void) {
+	if (musichandle) Player_Free(musichandle);
+	musichandle = NULL;
+	MikMod_DisableOutput();
 	MikMod_Exit();
 }
 
@@ -48,43 +47,45 @@ void unloadMikmod() {
 static unsigned oldvol = 0;
 
 void loadAndPlayMusicFile(char* filename, BOOL loop) {
-	if(musichandle) stopAndUnloadMusic();
-	if(oldvol) md_musicvolume = oldvol;
-	musichandle = MikMod_LoadSong(filename, MAX_MUSIC_CHAN);
-	musichandle->loop = loop;
-	Player_Start(musichandle);
+	if (musichandle) stopAndUnloadMusic();
+	if (oldvol) md_musicvolume = oldvol;
+	musichandle = Player_Load(filename, MAX_MUSIC_CHAN, 0);
+	if (musichandle) {
+		musichandle->loop = loop;
+		Player_Start(musichandle);
+	}
 }
 
-void stopAndUnloadMusic() {
+void stopAndUnloadMusic(void) {
 	Player_Stop();
-	MikMod_FreeSong(musichandle);
+	if (musichandle) Player_Free(musichandle);
 	musichandle = NULL;
 }
 
-void musicPause() {
+void musicPause(void) {
 	oldvol = md_musicvolume;
 	md_musicvolume = 0;
-	MP_HandleTick();
-	Player_Stop();
+	Player_TogglePause();
 }
-void musicResume() {
-	Player_Start(musichandle);
+
+void musicResume(void) {
+	Player_TogglePause();
 	md_musicvolume = oldvol;
 }
 
 
-Sound* loadSound(char* filename) {
-	return WAV_LoadFN(filename);
+Sound loadSound(char* filename) {
+	return Sample_Load(filename);
 }
 
-void unloadSound(Sound* handle) {
-	WAV_Free(handle);
+void unloadSound(Sound handle) {
+	if (handle) Sample_Free(handle);
 }
 
 
-Voice playSound(Sound* handle) {
-	if(handle) { // Just for good measure, even if it's a precondition...
-		Voice voice = MikMod_PlaySample(handle,0,0);
+Voice playSound(Sound handle) {
+	if (handle) {
+		Voice voice = Sample_Play(handle, 0, 0);
 		setVoicePanning(voice, 127);
 		setVoiceVolume(voice, 255);
 		return voice;
@@ -97,92 +98,89 @@ void stopSound(Voice handle) {
 }
 
 void resumeSound(Voice handle, Sound* soundhandle) {
-	printf("Sample resuming crashes. To spare you the pain, it has been disabled.\n");
-	//Voice_Play(handle, soundhandle, Voice_GetPosition(handle));
+	printf("Sample resuming not supported.\n");
 }
 
 
-void setSoundLooping(Sound *handle, int loopmode, unsigned long loopstart, unsigned long loopend) { // loopmode: 0 - no loop, 1 - loop start to end, 2 - take arguments
-	if(!handle) return;
-	if(loopmode == 0) {
+void setSoundLooping(Sound handle, int loopmode, unsigned long loopstart, unsigned long loopend) {
+	if (!handle) return;
+	if (loopmode == 0) {
 		handle->loopstart = 0;
 		handle->loopend = 0;
-		return;
-	} else if(loopmode == 1) {
+		handle->flags &= ~SF_LOOP;
+	} else if (loopmode == 1) {
 		handle->loopstart = 0;
 		handle->loopend = handle->length;
-	} else if(loopmode == 2) {
+		handle->flags |= SF_LOOP;
+	} else if (loopmode == 2) {
 		handle->loopstart = loopstart;
 		handle->loopend = loopend;
+		handle->flags |= SF_LOOP;
 	}
-	handle->flags |= SF_LOOP | SFX_CRITICAL;
 }
 
-unsigned long getSoundLengthInSamples(Sound *handle) {
-	if(!handle) return 0;
+unsigned long getSoundLengthInSamples(Sound handle) {
+	if (!handle) return 0;
 	return handle->length;
 }
 
-unsigned long getSoundSampleSpeed(Sound *handle) {
-	if(!handle) return 0;
+unsigned long getSoundSampleSpeed(Sound handle) {
+	if (!handle) return 0;
 	return handle->speed;
 }
 
 
-
-
-
 void setVoiceVolume(Voice handle, UWORD vol) {
-	if(vol>255) vol = 255;
+	if (vol > 255) vol = 255;
 	Voice_SetVolume(handle, vol);
 }
 
-
-
 void setVoicePanning(Voice handle, ULONG pan) {
-	if(pan>255) pan = 255;
+	if (pan > 255) pan = 255;
 	Voice_SetPanning(handle, pan);
 }
 
-
 void setVoiceFrequency(Voice handle, ULONG freq) {
-	if(freq>100000) freq = 100000;
+	if (freq > 100000) freq = 100000;
 	Voice_SetFrequency(handle, freq);
 }
 
-extern BOOL musicIsPlaying() {
+BOOL musicIsPlaying(void) {
 	return Player_Active();
 }
 
-extern BOOL voiceIsPlaying(Voice handle) {
+BOOL voiceIsPlaying(Voice handle) {
 	return !Voice_Stopped(handle);
 }
 
 
-extern unsigned setMusicVolume(unsigned arg) {
-	if(arg!= 9999) {
-		if(arg>128) arg = 128;
+unsigned setMusicVolume(unsigned arg) {
+	if (arg != 9999) {
+		if (arg > 128) arg = 128;
 		md_musicvolume = arg;
 	}
 	return md_musicvolume;
 }
-extern unsigned setSFXVolume(unsigned arg) {
-	if(arg!= 9999) {
-		if(arg>128) arg = 128;
+
+unsigned setSFXVolume(unsigned arg) {
+	if (arg != 9999) {
+		if (arg > 128) arg = 128;
 		md_sndfxvolume = arg;
 	}
 	return md_sndfxvolume;
 }
-extern unsigned setReverb(unsigned arg) {
-	if(arg!= 9999) {
-		if(arg>15) arg = 15;
+
+unsigned setReverb(unsigned arg) {
+	if (arg != 9999) {
+		if (arg > 15) arg = 15;
 		md_reverb = arg;
 	}
 	return md_reverb;
 }
-extern unsigned setPanSep(unsigned arg) {
-	if(arg!= 9999) {
-		if(arg>128) arg = 128;
+
+unsigned setPanSep(unsigned arg) {
+	if (arg != 9999) {
+		if (arg > 128) arg = 128;
 		md_pansep = arg;
 	}
 	return md_pansep;

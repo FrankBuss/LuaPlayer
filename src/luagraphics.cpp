@@ -1,9 +1,5 @@
 #include <stdlib.h>
 #include <malloc.h>
-#include <pspdisplay.h>
-#include <psputils.h>
-#include <pspgu.h>
-#include <pspgum.h>
 #include <string.h>
 #include "luaplayer.h"
 
@@ -34,7 +30,7 @@ static int lua_waitVblankStart(lua_State *L)
 	if (argc == 0 || t != LUA_TNUMBER) {
 		sceDisplayWaitVblankStart();
 	} else {
-		int count = (t == LUA_TNUMBER)?luaL_checkint(L, 1):luaL_checkint(L, 2);
+		int count = (t == LUA_TNUMBER)?(int)luaL_checknumber(L, 1):(int)luaL_checknumber(L, 2);
 		int i;
 		for (i = 0; i < count; i++) sceDisplayWaitVblankStart();
 	}
@@ -158,23 +154,23 @@ static int Font_createProportional(lua_State *L) {
 }
 
 static int Font_setCharSize(lua_State *L) {
-	int argc = lua_gettop(L); 
-	if (argc != 5) return luaL_error(L, "wrong number of arguments"); 
+	int argc = lua_gettop(L);
+	if (argc != 5) return luaL_error(L, "wrong number of arguments");
 	Font* font = *toFont(L, 1);
-	int width = luaL_checkint(L, 2); 
-	int height = luaL_checkint(L, 3); 
-	int dpiX = luaL_checkint(L, 4); 
-	int dpiY = luaL_checkint(L, 5); 
+	int width = (int)luaL_checknumber(L, 2);
+	int height = (int)luaL_checknumber(L, 3);
+	int dpiX = (int)luaL_checknumber(L, 4);
+	int dpiY = (int)luaL_checknumber(L, 5); 
 	lua_pushnumber(L, FT_Set_Char_Size(font->face, width, height, dpiX, dpiY));
 	return 1;
 }
 
 static int Font_setPixelSizes(lua_State *L) {
-	int argc = lua_gettop(L); 
-	if (argc != 3) return luaL_error(L, "wrong number of arguments"); 
+	int argc = lua_gettop(L);
+	if (argc != 3) return luaL_error(L, "wrong number of arguments");
 	Font* font = *toFont(L, 1);
-	int width = luaL_checkint(L, 2); 
-	int height = luaL_checkint(L, 3); 
+	int width = (int)luaL_checknumber(L, 2);
+	int height = (int)luaL_checknumber(L, 3); 
 	lua_pushnumber(L, FT_Set_Pixel_Sizes(font->face, width, height));
 	return 1;
 }
@@ -189,7 +185,7 @@ static int Font_getTextSize(lua_State *L) {
 	FT_GlyphSlot slot = font->face->glyph;
 	int x = 0;
 	int y = 0;
-	int maxHeight = 0;
+	unsigned int maxHeight = 0;
 	for (int n = 0; n < num_chars; n++) {
 		// TODO: this can be done better with glyph bounding box
 		FT_UInt glyph_index = FT_Get_Char_Index(font->face, text[n]);
@@ -222,7 +218,7 @@ static int Font_tostring (lua_State *L) {
 	lua_pushstring(L, (*toFont(L, 1))->name);
 	return 1;
 }
-static const luaL_reg Font_methods[] = {
+static const luaL_Reg Font_methods[] = {
 	{"load", Font_load},
 	{"createMonoSpaced", Font_createMonoSpaced},
 	{"createProportional", Font_createProportional},
@@ -231,7 +227,7 @@ static const luaL_reg Font_methods[] = {
 	{"getTextSize", Font_getTextSize},
 	{0,0}
 };
-static const luaL_reg Font_meta[] = {
+static const luaL_Reg Font_meta[] = {
 	{"__gc", Font_free},
 	{"__tostring", Font_tostring},
 	{0,0}
@@ -245,8 +241,8 @@ UserdataStubs(Image, Image*) //==========================
 static int Image_createEmpty(lua_State *L)
 {
 	if (lua_gettop(L) != 2) return luaL_error(L, "Argument error: Image.createEmpty(w, h) takes two arguments.");
-	int w = luaL_checkint(L, 1);
-	int h = luaL_checkint(L, 2);
+	int w = (int)luaL_checknumber(L, 1);
+	int h = (int)luaL_checknumber(L, 2);
 	if (w <= 0 || h <= 0 || w > 512 || h > 512) return luaL_error(L, "invalid size");
 	lua_gc(L, LUA_GCCOLLECT, 0);
 	Image* image = createImage(w, h);
@@ -299,9 +295,9 @@ static int Image_blit (lua_State *L) {
 	if(argc==5 || argc==9) lua_pop(L, 1);
 	
 	SETDEST
-		
-	int dx = luaL_checkint(L, 1);
-	int dy = luaL_checkint(L, 2);
+
+	int dx = (int)luaL_checknumber(L, 1);
+	int dy = (int)luaL_checknumber(L, 2);
 	Image* source;
 	if (lua_topointer(L, 3) == theScreen) {
 		theScreenImage.data = getVramDrawBuffer();
@@ -309,12 +305,12 @@ static int Image_blit (lua_State *L) {
 	} else {
 		source = *toImage(L, 3);
 	}
-	
+
 	bool rect = (argc ==8 || argc == 9) ;
-	int sx = rect? luaL_checkint(L, 4) : 0;
-	int sy = rect? luaL_checkint(L, 5) : 0;
-	int width = rect? luaL_checkint(L, 6) : source->imageWidth;
-	int height = rect? luaL_checkint(L, 7) : source->imageHeight;
+	int sx = rect? (int)luaL_checknumber(L, 4) : 0;
+	int sy = rect? (int)luaL_checknumber(L, 5) : 0;
+	int width = rect? (int)luaL_checknumber(L, 6) : source->imageWidth;
+	int height = rect? (int)luaL_checknumber(L, 7) : source->imageHeight;
 	
 	if (!dest) {
 		if (!adjustBlitRectangle(width, height, SCREEN_WIDTH, SCREEN_HEIGHT, &sx, &sy, &width, &height, &dx, &dy)) return 0;
@@ -346,10 +342,10 @@ static int Image_fillRect (lua_State *L) {
 	if (argc != 5 && argc != 6) return luaL_error(L, "wrong number of arguments");
 	SETDEST
 
-	int x0 = luaL_checkint(L, 1);
-	int y0 = luaL_checkint(L, 2);
-	int width = luaL_checkint(L, 3);
-	int height = luaL_checkint(L, 4);
+	int x0 = (int)luaL_checknumber(L, 1);
+	int y0 = (int)luaL_checknumber(L, 2);
+	int width = (int)luaL_checknumber(L, 3);
+	int height = (int)luaL_checknumber(L, 4);
 	Color color = (argc==6)?*toColor(L, 5):0;
 	
 	if (width <= 0 || height <= 0) return 0;
@@ -391,13 +387,13 @@ static int Image_fillRect (lua_State *L) {
 	
 }
 static int Image_drawLine (lua_State *L) {
-	int argc = lua_gettop(L); 
-	if (argc != 5 && argc != 6) return luaL_error(L, "wrong number of arguments"); 
+	int argc = lua_gettop(L);
+	if (argc != 5 && argc != 6) return luaL_error(L, "wrong number of arguments");
 	SETDEST
-	int x0 = luaL_checkint(L, 1); 
-	int y0 = luaL_checkint(L, 2); 
-	int x1 = luaL_checkint(L, 3); 
-	int y1 = luaL_checkint(L, 4); 
+	int x0 = (int)luaL_checknumber(L, 1);
+	int y0 = (int)luaL_checknumber(L, 2);
+	int x1 = (int)luaL_checknumber(L, 3);
+	int y1 = (int)luaL_checknumber(L, 4); 
 	Color color = (argc==6) ? *toColor(L, 5) : 0;
 	
 	// TODO: better clipping
@@ -425,8 +421,8 @@ static int Image_pixel (lua_State *L) {
 	int argc = lua_gettop(L);
 	if(argc != 3 && argc != 4) return luaL_error(L, "Image:pixel(x, y, [color]) takes two or three arguments, and must be called with a colon.");
 	SETDEST
-	int x = luaL_checkint(L, 1);
-	int y = luaL_checkint(L, 2);
+	int x = (int)luaL_checknumber(L, 1);
+	int y = (int)luaL_checknumber(L, 2);
 	Color color = (argc == 4)?*toColor(L, 3):0;
 	if(dest) {
 		if (x >= 0 && y >= 0 && x < dest->imageWidth && y < dest->imageHeight) {
@@ -456,8 +452,8 @@ static int Image_print (lua_State *L) {
 	int argc = lua_gettop(L);
 	if (argc != 4 && argc != 5) return luaL_error(L, "wrong number of arguments");
 	SETDEST
-	int x = luaL_checkint(L, 1);
-	int y = luaL_checkint(L, 2);
+	int x = (int)luaL_checknumber(L, 1);
+	int y = (int)luaL_checknumber(L, 2);
 	const char* text = luaL_checkstring(L, 3);
 	Color color = (argc == 5)?*toColor(L, 4):0xFF000000;
 	if (!dest) {
@@ -473,8 +469,8 @@ static int Image_fontPrint(lua_State *L) {
 	if (argc != 5 && argc != 6) return luaL_error(L, "wrong number of arguments");
 	SETDEST
 	Font* font = *toFont(L, 1);
-	int x = luaL_checkint(L, 2);
-	int y = luaL_checkint(L, 3);
+	int x = (int)luaL_checknumber(L, 2);
+	int y = (int)luaL_checknumber(L, 3);
 	const char* text = luaL_checkstring(L, 4);
 	Color color = (argc == 6)?*toColor(L, 5):0xFF000000;
 
@@ -521,7 +517,7 @@ static int Image_save (lua_State *L) {
 	if (dest) {
 		saveImage(filename, dest->data, dest->imageWidth, dest->imageHeight, dest->textureWidth, 1);
 	} else {
-		saveImage(filename, getVramDisplayBuffer(), SCREEN_WIDTH, SCREEN_HEIGHT, PSP_LINE_SIZE, 0);
+		saveImage(filename, getVramDisplayBuffer(), SCREEN_WIDTH, SCREEN_HEIGHT, LINE_SIZE, 0);
 	}
 	return 0;
 }
@@ -533,16 +529,16 @@ static int Image_free(lua_State *L) {
 
 static int Image_tostring (lua_State *L) {
 	Image_width(L);
-	int w = luaL_checkint(L, 2); lua_pop(L, 1);
+	int w = (int)luaL_checknumber(L, 2); lua_pop(L, 1);
 	Image_height(L);
-	int h = luaL_checkint(L, 2); lua_pop(L, 1);
+	int h = (int)luaL_checknumber(L, 2); lua_pop(L, 1);
 
 	char buff[32];
 	sprintf(buff, "%p", *toImage(L, 1));
 	lua_pushfstring(L, "Image (%s) [%d, %d]", buff, w, h);
 	return 1;
 }
-static const luaL_reg Image_methods[] = {
+static const luaL_Reg Image_methods[] = {
 	{"createEmpty", Image_createEmpty},
 	{"load", Image_load},
 	{"loadFromMemory", Image_loadFromMemory},
@@ -558,7 +554,7 @@ static const luaL_reg Image_methods[] = {
 	{"save", Image_save},
 	{0,0}
 };
-static const luaL_reg Image_meta[] = {
+static const luaL_Reg Image_meta[] = {
 	{"__gc", Image_free},
 	{"__tostring", Image_tostring},
 	{0,0}
@@ -569,17 +565,17 @@ UserdataRegister(Image, Image_methods, Image_meta)
 
 
 static int Color_new (lua_State *L) {
-	int argc = lua_gettop(L); 
-	if (argc != 3 && argc != 4) return luaL_error(L, "Argument error: Color.new(r, g, b, [a]) takes either three color arguments or three color arguments and an alpha value."); 
-	
+	int argc = lua_gettop(L);
+	if (argc != 3 && argc != 4) return luaL_error(L, "Argument error: Color.new(r, g, b, [a]) takes either three color arguments or three color arguments and an alpha value.");
+
 	Color *color = pushColor(L);
-	
-	unsigned r = CLAMP(luaL_checkint(L, 1), 0, 255); 
-	unsigned g = CLAMP(luaL_checkint(L, 2), 0, 255); 
-	unsigned b = CLAMP(luaL_checkint(L, 3), 0, 255);
+
+	unsigned r = CLAMP((int)luaL_checknumber(L, 1), 0, 255);
+	unsigned g = CLAMP((int)luaL_checknumber(L, 2), 0, 255);
+	unsigned b = CLAMP((int)luaL_checknumber(L, 3), 0, 255);
 	unsigned a;
 	if (argc == 4) {
-		a = CLAMP(luaL_checkint(L, 4), 0, 255);
+		a = CLAMP((int)luaL_checknumber(L, 4), 0, 255);
 	} else {
 		a = 255;
 	}
@@ -609,10 +605,10 @@ static int Color_colors (lua_State *L) {
 
 static int Color_tostring (lua_State *L) {
 	Color_colors(L);
-	lua_pushstring(L, "r"); lua_gettable(L, -2); int r = luaL_checkint(L, -1); lua_pop(L, 1);
-	lua_pushstring(L, "g"); lua_gettable(L, -2); int g = luaL_checkint(L, -1); lua_pop(L, 1);
-	lua_pushstring(L, "b"); lua_gettable(L, -2); int b = luaL_checkint(L, -1); lua_pop(L, 1);
-	lua_pushstring(L, "a"); lua_gettable(L, -2); int a = luaL_checkint(L, -1); lua_pop(L, 1);
+	lua_pushstring(L, "r"); lua_gettable(L, -2); int r = (int)luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushstring(L, "g"); lua_gettable(L, -2); int g = (int)luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushstring(L, "b"); lua_gettable(L, -2); int b = (int)luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushstring(L, "a"); lua_gettable(L, -2); int a = (int)luaL_checknumber(L, -1); lua_pop(L, 1);
 	lua_pop(L, 1); // pop the table
 	lua_pushfstring(L, "Color (r %d, g %d, b %d, a %d)", r, g, b, a);
 	return 1;
@@ -624,12 +620,12 @@ static int Color_equal(lua_State *L) {
 	lua_pushboolean(L, a == b);
 	return 1;
 }
-static const luaL_reg Color_methods[] = {
+static const luaL_Reg Color_methods[] = {
 	{"new", Color_new},
 	{"colors", Color_colors},
 	{0,0}
 };
-static const luaL_reg Color_meta[] = {
+static const luaL_Reg Color_meta[] = {
 	{"__tostring", Color_tostring},
 	{"__eq", Color_equal},
 	{0,0}
@@ -639,7 +635,7 @@ UserdataRegister(Color, Color_methods, Color_meta)
 
 
 
-static const luaL_reg Screen_functions[] = {
+static const luaL_Reg Screen_functions[] = {
 	{"flip", lua_flipScreen},
 	{"waitVblankStart", lua_waitVblankStart},
 	{0,0}
@@ -657,8 +653,10 @@ void luaGraphics_init(lua_State *L) {
 	Color_register(L);
 	Font_register(L);
 	
-	luaL_openlib(L, "screen", Screen_functions, 0);
-	luaL_openlib(L, "screen", Image_methods, 0); // Basically just an ugly hack. What I'd really want to say is metatable(screen).__index = Image, but my lua powress is failing me there.
+	luaL_newlib(L, Screen_functions);
+	lua_setglobal(L, "screen");
+	lua_getglobal(L, "screen");
+	luaL_setfuncs(L, Image_methods, 0); // Add Image methods to screen table
 
 	// this looks a bit hacked; I hope the "theScreen" pointer is persistent
 	theScreen = lua_topointer(L, -1);

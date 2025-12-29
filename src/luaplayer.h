@@ -2,13 +2,12 @@
 #define __LUAPLAYER_H
 
 #include <stdlib.h>
-#include <tdefs.h>
+#include "platform/platform.h"
 
 extern "C" {
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
-extern void luaC_collectgarbage (lua_State *L);
 }
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -18,7 +17,7 @@ extern void luaC_collectgarbage (lua_State *L);
 DATATYPE *to##HANDLE (lua_State *L, int index) \
 { \
   DATATYPE* handle  = (DATATYPE*)lua_touserdata(L, index); \
-  if (handle == NULL) luaL_typerror(L, index, #HANDLE); \
+  if (handle == NULL) luaL_typeerror(L, index, #HANDLE); \
   return handle; \
 } \
 DATATYPE* push##HANDLE(lua_State *L) { \
@@ -27,8 +26,7 @@ DATATYPE* push##HANDLE(lua_State *L) { \
 	lua_pushvalue(L, -1); \
 	lua_setmetatable(L, -3); \
 	lua_pushstring(L, "__index"); \
-	lua_pushstring(L, #HANDLE); \
-	lua_gettable(L, LUA_GLOBALSINDEX); \
+	lua_getglobal(L, #HANDLE); \
 	lua_settable(L, -3); \
 	lua_pop(L, 1); \
 	return newvalue; \
@@ -36,25 +34,24 @@ DATATYPE* push##HANDLE(lua_State *L) { \
 
 #define UserdataRegister(HANDLE, METHODS, METAMETHODS) \
 int HANDLE##_register(lua_State *L) { \
-	luaL_newmetatable(L, #HANDLE);  /* create new metatable for file handles */ \
+	luaL_newmetatable(L, #HANDLE); \
 	lua_pushliteral(L, "__index"); \
-	lua_pushvalue(L, -2);  /* push metatable */ \
-	lua_rawset(L, -3);  /* metatable.__index = metatable */ \
+	lua_pushvalue(L, -2); \
+	lua_rawset(L, -3); \
 	\
-	luaL_openlib(L, 0, METAMETHODS, 0); \
-	luaL_openlib(L, #HANDLE, METHODS, 0); \
+	luaL_setfuncs(L, METAMETHODS, 0); \
 	\
-	lua_pushstring(L, #HANDLE); \
-	lua_gettable(L, LUA_GLOBALSINDEX); \
+	luaL_newlib(L, METHODS); \
+	lua_setglobal(L, #HANDLE); \
+	\
+	lua_getglobal(L, #HANDLE); \
 	luaL_getmetatable(L, #HANDLE); \
 	lua_setmetatable(L, -2); \
+	lua_pop(L, 1); \
 	return 1; \
 }
 
 extern const char * runScript(const char* script, bool isStringBuffer);
-extern void luaC_collectgarbage (lua_State *L);
-
-
 
 extern void luaSound_init(lua_State *L);
 extern void luaControls_init(lua_State *L);

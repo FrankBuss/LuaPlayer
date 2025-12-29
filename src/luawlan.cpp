@@ -90,7 +90,7 @@ static int Wlan_useConnectionConfig(lua_State* L)
 	int argc = lua_gettop(L); 
 	if (argc != 1) return luaL_error(L, "Argument error: index to connection config expected."); 
 	
-	int connectionConfig = luaL_checkint(L, 1) - 1; 
+	int connectionConfig = (int)luaL_checkinteger(L, 1) - 1; 
 	int result = sceNetApctlConnect(connectionConfig); 
 	
 	int state = 0; 
@@ -163,7 +163,7 @@ static int Socket_connect(lua_State *L)
 
 	// resolve host
 	const char *host = luaL_checkstring(L, 1);
-	int port = luaL_checkint(L, 2);
+	int port = (int)luaL_checkinteger(L, 2);
 	socket->addrTo.sin_family = AF_INET;
 	socket->addrTo.sin_port = htons(port);
 	int err = sceNetInetInetAton(host, &socket->addrTo.sin_addr);
@@ -223,7 +223,7 @@ static int Socket_createServerSocket(lua_State *L)
 	int argc = lua_gettop(L); 
 	if (argc != 1) return luaL_error(L, "port expected."); 
 	
-	int port = luaL_checkint(L, 1);
+	int port = (int)luaL_checkinteger(L, 1);
 
 	Socket** luaSocket = pushSocket(L);
 	Socket* socket = (Socket*) malloc(sizeof(Socket));

@@ -1,64 +1,50 @@
 #ifndef SOUND__H
 #define SOUND__H
-// Mikmod interface by nevyn <joachimb@gmail.com>
-// Based on code by Jim Shaw
+/*
+ * Sound interface for LuaPlayer
+ * Uses MikMod for MOD/XM/S3M/IT playback and WAV samples
+ */
 
-// To stop a playing song, it must also be freed. That's why you can't
-// preload it and /then/ play it, like with sounds.
+#include "platform/platform.h"
+#include <mikmod.h>
 
-
-#include <psptypes.h>
-#include "mikmod.h"
-
-
-typedef SAMPLE Sound;
+typedef SAMPLE* Sound;
 typedef int Voice;
 
-// Internals
-extern int _mm_errno;
-extern BOOL _mm_critical;
-extern char *_mm_errmsg[];
-
-extern UWORD md_mode;
-extern UBYTE md_musicvolume;    /* volume of song */
-extern UBYTE md_sndfxvolume;    /* volume of sound effects */
-extern UBYTE md_reverb;         /* 0 = none;  15 = chaos */
-extern UBYTE md_pansep;         /* 0 = mono;  128 == 100% (full left/right) */
-
+/**
+ * Initialize MikMod (sound and music).
+ */
+extern void initSound(void);
 
 /**
- * Initialize Mikmod (sound and music).
+ * Deinitialize MikMod (sound and music)
  */
-extern void initMikmod();
-
-/**
- * Deinitialize Mikmod (sound and music)
- */
-extern void unloadMikmod();
+extern void uninitSound(void);
 
 /**
  * Load a module music file (mod, xm, s3m, it, ...) and play it.
- * Filename must be a full path ("ms0:/psp/...")
+ * Filename must be a full path.
  *
  * @pre filename != NULL
  * @param filename - filename of the music file to load
+ * @param loop - whether to loop the music
  */
 extern void loadAndPlayMusicFile(char* filename, BOOL loop);
 
 /**
- * Stop music.
+ * Stop and unload music.
  */
-extern void stopAndUnloadMusic();
+extern void stopAndUnloadMusic(void);
 
 /**
- * Load a module wav file. !!NOTE!!: MUST BE MONO!
- * Filename must be a full path ("ms0:/psp/...")
+ * Load a WAV file. NOTE: MUST BE MONO!
+ * Filename must be a full path.
  *
  * @pre filename != NULL
  * @param filename - filename of the wav file to load
  * @return pointer to a new allocated Sound struct, or NULL on failure
  */
-extern Sound* loadSound(char* filename);
+extern Sound loadSound(char* filename);
 
 /**
  * Unload the loaded sound
@@ -66,8 +52,7 @@ extern Sound* loadSound(char* filename);
  * @pre handle != NULL
  * @param handle - the loaded wav file
  */
-extern void unloadSound(Sound* handle);
-
+extern void unloadSound(Sound handle);
 
 /**
  * Play sample with volume 255, pan 127.
@@ -76,28 +61,27 @@ extern void unloadSound(Sound* handle);
  * @param handle - Handle of the loaded wav file.
  * @return handle of the currently playing voice
  */
-extern Voice playSound(Sound* handle);
+extern Voice playSound(Sound handle);
 
 /**
  * Stop sample.
  *
- * @pre handle != NULL
- * @param handle - Handle of the loaded wav file.
+ * @param handle - Handle of the playing voice.
  */
 extern void stopSound(Voice handle);
 
 extern void resumeSound(Voice handle, Sound* soundhandle);
 
-void setSoundLooping(Sound *handle, int loopmode, unsigned long loopstart, unsigned long loopend);
-unsigned long getSoundLengthInSamples(Sound *handle);
-unsigned long getSoundSampleSpeed(Sound *handle);
-
+void setSoundLooping(Sound handle, int loopmode, unsigned long loopstart, unsigned long loopend);
+unsigned long getSoundLengthInSamples(Sound handle);
+unsigned long getSoundSampleSpeed(Sound handle);
 
 /**
  * Sets the volume of the specified voice.
  *
- * @pre handle != NULL && vol >= 0 && vol <= 255
+ * @pre vol >= 0 && vol <= 255
  * @param handle - Handle of the currently playing voice.
+ * @param vol - Volume (0-255)
  */
 extern void setVoiceVolume(Voice handle, UWORD vol);
 
@@ -105,78 +89,68 @@ extern void setVoiceVolume(Voice handle, UWORD vol);
  * Sets the panning of the specified voice. 127 is middle,
  * 0 is full left and 255 is full right.
  *
- * @pre handle != NULL && pan >= 0 && pan <= 255
+ * @pre pan >= 0 && pan <= 255
  * @param handle - Handle of the currently playing voice.
+ * @param pan - Panning (0-255)
  */
 extern void setVoicePanning(Voice handle, ULONG pan);
 
 /**
  * Sets the speed/frequency of the specified voice.
  *
- * @pre handle != NULL && freq >= 0
  * @param handle - Handle of the currently playing voice.
+ * @param freq - Frequency in Hz
  */
 extern void setVoiceFrequency(Voice handle, ULONG freq);
 
-
 /**
  * Checks whether music is playing at the moment.
- * 
+ *
  * @return whether music is playing or not.
  */
-extern BOOL musicIsPlaying();
-
+extern BOOL musicIsPlaying(void);
 
 /**
  * Checks whether a specific voice is playing at the moment.
- * 
- * @pre handle != NULL 
+ *
  * @param handle - Handle of the currently playing voice.
- * @return whether music is playing or not.
+ * @return whether the voice is playing or not.
  */
 extern BOOL voiceIsPlaying(Voice handle);
- 
- 
+
 /**
  * Sets the music volume.
- * 
- * @pre (arg > 0 && arg < 128) || arg==9999
- * @param arg is the volume
- * @return new arg
+ *
+ * @param arg - volume (0-128), or 9999 to query current value
+ * @return current volume
  */
 extern unsigned setMusicVolume(unsigned arg);
 
 /**
  * Sets the sample/SFX/wav volume.
- * 
- * @pre (arg > 0 && arg < 128) || arg==9999
- * @param arg is the volume
- * @return new arg
+ *
+ * @param arg - volume (0-128), or 9999 to query current value
+ * @return current volume
  */
 extern unsigned setSFXVolume(unsigned arg);
 
 /**
  * Sets the reverb.
- * 
- * @pre (arg > 0 && arg < 15) || arg==9999
- * @param arg is the amount of reverb.
- * @return new arg
+ *
+ * @param arg - reverb amount (0-15), or 9999 to query current value
+ * @return current reverb
  */
 extern unsigned setReverb(unsigned arg);
 
 /**
  * Sets panoramic separation. 0: mono. 128: full separation.
- * 
- * @pre (arg > 0 && arg < 128) || arg==9999
- * @param arg is the separation
- * @return new arg
+ *
+ * @param arg - separation (0-128), or 9999 to query current value
+ * @return current separation
  */
 extern unsigned setPanSep(unsigned arg);
 
-
-
-extern void musicPause();
-extern void musicResume();
-
+extern void musicPause(void);
+extern void musicResume(void);
 
 #endif

@@ -76,6 +76,51 @@ When LuaPlayer starts up, it will look for a script to load in the following loc
 3. `./luaplayer/[Application bundle or package]/script.lua`
 4. `./luaplayer/System/system.lua`
 
+## Building on Linux
+
+LuaPlayer can be built as a desktop application on Linux for development and testing.
+
+### Required packages (Debian/Ubuntu)
+
+```bash
+sudo apt install build-essential cmake \
+    liblua5.4-dev libfreetype-dev libpng-dev libjpeg-dev \
+    libmikmod-dev libsdl2-dev
+```
+
+### Build instructions
+
+```bash
+mkdir build
+cd build
+cmake ..
+make
+```
+
+The `luaplayer` executable will be created in the build directory. Run it with a Lua script:
+
+```bash
+./luaplayer [-scale N] path/to/script.lua
+```
+
+Options:
+- `-scale N` : Set display scale factor (1-8, default: 2)
+
+### Keyboard controls
+
+| Key | PSP Button |
+|-----|------------|
+| Arrow keys | D-pad |
+| A | Select |
+| S | Start |
+| Q | L Trigger |
+| W | R Trigger |
+| R | Triangle |
+| F | Circle |
+| C | Cross |
+| D | Square |
+| ESC | Exit |
+
 ## Contributing code to the LuaPlayer project
 
 If you want to help out with writing code for the LuaPlayer project, you're reading the right section. Lots of work needs to be done before LP can be considered stable. There's a bunch of undocumented bugs all over the place, for example.

@@ -1,9 +1,10 @@
 #include <stdlib.h>
 #include <malloc.h>
-#include <pspdisplay.h>
-#include <psputils.h>
+#include <string.h>
+#include <strings.h>
 #include <png.h>
-#include <pspgu.h>
+
+#include "platform/platform.h"
 
 extern "C" {
 #include <jpeglib.h>
@@ -14,7 +15,7 @@ extern "C" {
 #include "framebuffer.h"
 
 #define IS_ALPHA(color) (((color)&0xff000000)==0xff000000?0:1)
-#define FRAMEBUFFER_SIZE (PSP_LINE_SIZE*SCREEN_HEIGHT*4)
+#define FRAMEBUFFER_SIZE (LINE_SIZE*SCREEN_HEIGHT*4)
 #define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 
 typedef struct
@@ -23,7 +24,103 @@ typedef struct
 	short x, y, z;
 } Vertex;
 
+#ifdef PLATFORM_LINUX
+/* MSX 8x8 bitmap font for Linux build */
+static u8 msx[]=
+"\x00\x00\x00\x00\x00\x00\x00\x00\x3c\x42\xa5\x81\xa5\x99\x42\x3c"
+"\x3c\x7e\xdb\xff\xff\xdb\x66\x3c\x6c\xfe\xfe\xfe\x7c\x38\x10\x00"
+"\x10\x38\x7c\xfe\x7c\x38\x10\x00\x10\x38\x54\xfe\x54\x10\x38\x00"
+"\x10\x38\x7c\xfe\xfe\x10\x38\x00\x00\x00\x00\x30\x30\x00\x00\x00"
+"\xff\xff\xff\xe7\xe7\xff\xff\xff\x38\x44\x82\x82\x82\x44\x38\x00"
+"\xc7\xbb\x7d\x7d\x7d\xbb\xc7\xff\x0f\x03\x05\x79\x88\x88\x88\x70"
+"\x38\x44\x44\x44\x38\x10\x7c\x10\x30\x28\x24\x24\x28\x20\xe0\xc0"
+"\x3c\x24\x3c\x24\x24\xe4\xdc\x18\x10\x54\x38\xee\x38\x54\x10\x00"
+"\x10\x10\x10\x7c\x10\x10\x10\x10\x10\x10\x10\xff\x00\x00\x00\x00"
+"\x00\x00\x00\xff\x10\x10\x10\x10\x10\x10\x10\xf0\x10\x10\x10\x10"
+"\x10\x10\x10\x1f\x10\x10\x10\x10\x10\x10\x10\xff\x10\x10\x10\x10"
+"\x10\x10\x10\x10\x10\x10\x10\x10\x00\x00\x00\xff\x00\x00\x00\x00"
+"\x00\x00\x00\x1f\x10\x10\x10\x10\x00\x00\x00\xf0\x10\x10\x10\x10"
+"\x10\x10\x10\x1f\x00\x00\x00\x00\x10\x10\x10\xf0\x00\x00\x00\x00"
+"\x81\x42\x24\x18\x18\x24\x42\x81\x01\x02\x04\x08\x10\x20\x40\x80"
+"\x80\x40\x20\x10\x08\x04\x02\x01\x00\x10\x10\xff\x10\x10\x00\x00"
+"\x00\x00\x00\x00\x00\x00\x00\x00\x20\x20\x20\x20\x00\x00\x20\x00"
+"\x50\x50\x50\x00\x00\x00\x00\x00\x50\x50\xf8\x50\xf8\x50\x50\x00"
+"\x20\x78\xa0\x70\x28\xf0\x20\x00\xc0\xc8\x10\x20\x40\x98\x18\x00"
+"\x40\xa0\x40\xa8\x90\x98\x60\x00\x10\x20\x40\x00\x00\x00\x00\x00"
+"\x10\x20\x40\x40\x40\x20\x10\x00\x40\x20\x10\x10\x10\x20\x40\x00"
+"\x20\xa8\x70\x20\x70\xa8\x20\x00\x00\x20\x20\xf8\x20\x20\x00\x00"
+"\x00\x00\x00\x00\x00\x20\x20\x40\x00\x00\x00\x78\x00\x00\x00\x00"
+"\x00\x00\x00\x00\x00\x60\x60\x00\x00\x00\x08\x10\x20\x40\x80\x00"
+"\x70\x88\x98\xa8\xc8\x88\x70\x00\x20\x60\xa0\x20\x20\x20\xf8\x00"
+"\x70\x88\x08\x10\x60\x80\xf8\x00\x70\x88\x08\x30\x08\x88\x70\x00"
+"\x10\x30\x50\x90\xf8\x10\x10\x00\xf8\x80\xe0\x10\x08\x10\xe0\x00"
+"\x30\x40\x80\xf0\x88\x88\x70\x00\xf8\x88\x10\x20\x20\x20\x20\x00"
+"\x70\x88\x88\x70\x88\x88\x70\x00\x70\x88\x88\x78\x08\x10\x60\x00"
+"\x00\x00\x20\x00\x00\x20\x00\x00\x00\x00\x20\x00\x00\x20\x20\x40"
+"\x18\x30\x60\xc0\x60\x30\x18\x00\x00\x00\xf8\x00\xf8\x00\x00\x00"
+"\xc0\x60\x30\x18\x30\x60\xc0\x00\x70\x88\x08\x10\x20\x00\x20\x00"
+"\x70\x88\x08\x68\xa8\xa8\x70\x00\x20\x50\x88\x88\xf8\x88\x88\x00"
+"\xf0\x48\x48\x70\x48\x48\xf0\x00\x30\x48\x80\x80\x80\x48\x30\x00"
+"\xe0\x50\x48\x48\x48\x50\xe0\x00\xf8\x80\x80\xf0\x80\x80\xf8\x00"
+"\xf8\x80\x80\xf0\x80\x80\x80\x00\x70\x88\x80\xb8\x88\x88\x70\x00"
+"\x88\x88\x88\xf8\x88\x88\x88\x00\x70\x20\x20\x20\x20\x20\x70\x00"
+"\x38\x10\x10\x10\x90\x90\x60\x00\x88\x90\xa0\xc0\xa0\x90\x88\x00"
+"\x80\x80\x80\x80\x80\x80\xf8\x00\x88\xd8\xa8\xa8\x88\x88\x88\x00"
+"\x88\xc8\xc8\xa8\x98\x98\x88\x00\x70\x88\x88\x88\x88\x88\x70\x00"
+"\xf0\x88\x88\xf0\x80\x80\x80\x00\x70\x88\x88\x88\xa8\x90\x68\x00"
+"\xf0\x88\x88\xf0\xa0\x90\x88\x00\x70\x88\x80\x70\x08\x88\x70\x00"
+"\xf8\x20\x20\x20\x20\x20\x20\x00\x88\x88\x88\x88\x88\x88\x70\x00"
+"\x88\x88\x88\x88\x50\x50\x20\x00\x88\x88\x88\xa8\xa8\xd8\x88\x00"
+"\x88\x88\x50\x20\x50\x88\x88\x00\x88\x88\x88\x70\x20\x20\x20\x00"
+"\xf8\x08\x10\x20\x40\x80\xf8\x00\x70\x40\x40\x40\x40\x40\x70\x00"
+"\x00\x00\x80\x40\x20\x10\x08\x00\x70\x10\x10\x10\x10\x10\x70\x00"
+"\x20\x50\x88\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf8\x00"
+"\x40\x20\x10\x00\x00\x00\x00\x00\x00\x00\x70\x08\x78\x88\x78\x00"
+"\x80\x80\xb0\xc8\x88\xc8\xb0\x00\x00\x00\x70\x88\x80\x88\x70\x00"
+"\x08\x08\x68\x98\x88\x98\x68\x00\x00\x00\x70\x88\xf8\x80\x70\x00"
+"\x10\x28\x20\xf8\x20\x20\x20\x00\x00\x00\x68\x98\x98\x68\x08\x70"
+"\x80\x80\xf0\x88\x88\x88\x88\x00\x20\x00\x60\x20\x20\x20\x70\x00"
+"\x10\x00\x30\x10\x10\x10\x90\x60\x40\x40\x48\x50\x60\x50\x48\x00"
+"\x60\x20\x20\x20\x20\x20\x70\x00\x00\x00\xd0\xa8\xa8\xa8\xa8\x00"
+"\x00\x00\xb0\xc8\x88\x88\x88\x00\x00\x00\x70\x88\x88\x88\x70\x00"
+"\x00\x00\xb0\xc8\xc8\xb0\x80\x80\x00\x00\x68\x98\x98\x68\x08\x08"
+"\x00\x00\xb0\xc8\x80\x80\x80\x00\x00\x00\x78\x80\xf0\x08\xf0\x00"
+"\x40\x40\xf0\x40\x40\x48\x30\x00\x00\x00\x90\x90\x90\x90\x68\x00"
+"\x00\x00\x88\x88\x88\x50\x20\x00\x00\x00\x88\xa8\xa8\xa8\x50\x00"
+"\x00\x00\x88\x50\x20\x50\x88\x00\x00\x00\x88\x88\x98\x68\x08\x70"
+"\x00\x00\xf8\x10\x20\x40\xf8\x00\x18\x20\x20\x40\x20\x20\x18\x00"
+"\x20\x20\x20\x00\x20\x20\x20\x00\xc0\x20\x20\x10\x20\x20\xc0\x00"
+"\x40\xa8\x10\x00\x00\x00\x00\x00\x00\x00\x20\x50\xf8\xf8\x00\x00"
+"\x70\x88\x80\x80\x88\x70\x20\x60\x90\x00\x00\x90\x90\x90\x68\x00"
+"\x10\x20\x70\x88\xf8\x80\x70\x00\x20\x50\x70\x08\x78\x88\x78\x00"
+"\x48\x00\x70\x08\x78\x88\x78\x00\x20\x10\x70\x08\x78\x88\x78\x00"
+"\x20\x00\x70\x08\x78\x88\x78\x00\x00\x70\x80\x80\x70\x10\x60\x00"
+"\x20\x50\x70\x88\xf8\x80\x70\x00\x50\x00\x70\x88\xf8\x80\x70\x00"
+"\x20\x10\x70\x88\xf8\x80\x70\x00\x50\x00\x00\x60\x20\x20\x70\x00"
+"\x20\x50\x00\x60\x20\x20\x70\x00\x40\x20\x00\x60\x20\x20\x70\x00"
+"\x50\x00\x20\x50\x88\xf8\x88\x00\x20\x00\x20\x50\x88\xf8\x88\x00"
+"\x10\x20\xf8\x80\xf0\x80\xf8\x00\x00\x00\x6c\x12\x7e\x90\x6e\x00"
+"\x3e\x50\x90\x9c\xf0\x90\x9e\x00\x20\x50\x00\x70\x88\x88\x70\x00"
+"\x50\x00\x00\x70\x88\x88\x70\x00\x20\x10\x00\x70\x88\x88\x70\x00"
+"\x20\x50\x00\x90\x90\x90\x68\x00\x40\x20\x00\x90\x90\x90\x68\x00"
+"\x50\x00\x88\x88\x98\x68\x08\x70\x50\x00\x70\x88\x88\x88\x70\x00"
+"\x50\x00\x88\x88\x88\x88\x70\x00\x20\x20\x78\x80\x80\x78\x20\x20"
+"\x18\x24\x20\xf8\x20\xe2\x5c\x00\x88\x50\x20\xf8\x20\xf8\x20\x00"
+"\xc0\xa0\xa0\xc8\x9c\x88\x88\x8c\x18\x20\x20\xf8\x20\x20\x40\x80"
+"\x10\x20\x70\x08\x78\x88\x78\x00\x10\x20\x00\x60\x20\x20\x70\x00"
+"\x10\x20\x00\x70\x88\x88\x70\x00\x10\x20\x00\x90\x90\x90\x68\x00"
+"\x28\x50\x00\xb0\xc8\x88\x88\x00\x28\x50\x88\xc8\xa8\x98\x88\x00"
+"\x00\x70\x08\x78\x88\x78\x00\xf8\x00\x70\x88\x88\x88\x70\x00\xf8"
+"\x20\x00\x20\x40\x80\x88\x70\x00\x00\x00\x00\xf8\x80\x80\x00\x00"
+"\x00\x00\x00\xf8\x08\x08\x00\x00\x84\x88\x90\xa8\x54\x84\x08\x1c"
+"\x84\x88\x90\xa8\x58\xa8\x3c\x08\x20\x00\x00\x20\x20\x20\x20\x00"
+"\x00\x00\x24\x48\x90\x48\x24\x00\x00\x00\x90\x48\x24\x48\x90\x00"
+"\x28\x50\x20\x50\x88\xf8\x88\x00\x28\x50\x70\x88\x88\x88\x70\x00"
+"\x28\x50\x00\x88\x88\x88\x70\x00\x28\x50\xf8\x80\xf0\x80\xf8\x00"
+"\x00\x00\x00\x70\x70\x70\x00\x00\xf8\xf8\xf8\xf8\xf8\xf8\xf8\x00";
+#else
 extern u8 msx[];
+#endif
 
 unsigned int __attribute__((aligned(16))) list[262144];
 static int dispBufferNumber;
@@ -39,6 +136,7 @@ static int getNextPower2(int width)
 	return b;
 }
 
+#ifndef PLATFORM_LINUX
 Color* getVramDrawBuffer()
 {
 	Color* vram = (Color*) g_vram_base;
@@ -52,6 +150,7 @@ Color* getVramDisplayBuffer()
 	if (dispBufferNumber == 1) vram += FRAMEBUFFER_SIZE / sizeof(Color);
 	return vram;
 }
+#endif
 
 void user_warning_fn(png_structp png_ptr, png_const_charp warning_msg)
 {
@@ -59,9 +158,9 @@ void user_warning_fn(png_structp png_ptr, png_const_charp warning_msg)
 
 static bool isJpegFile(const char* filename)
 {
-	char* suffix = strrchr(filename, '.');
+	const char* suffix = strrchr(filename, '.');
 	if (suffix) {
-		if (stricmp(suffix, ".jpg") == 0 || stricmp(suffix, ".jpeg") == 0) return true;
+		if (strcasecmp(suffix, ".jpg") == 0 || strcasecmp(suffix, ".jpeg") == 0) return true;
 	}
 	return false;
 }
@@ -84,14 +183,14 @@ Image* loadPngImageImpl(png_structp png_ptr)
 	png_infop info_ptr;
 	info_ptr = png_create_info_struct(png_ptr);
 	if (info_ptr == NULL) {
-		png_destroy_read_struct(&png_ptr, png_infopp_NULL, png_infopp_NULL);
+		png_destroy_read_struct(&png_ptr, NULL, NULL);
 		return NULL;
 	}
 	png_set_sig_bytes(png_ptr, sig_read);
 	png_read_info(png_ptr, info_ptr);
-	png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type, &interlace_type, int_p_NULL, int_p_NULL);
+	png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type, &interlace_type, NULL, NULL);
 	if (width > 512 || height > 512) {
-		png_destroy_read_struct(&png_ptr, png_infopp_NULL, png_infopp_NULL);
+		png_destroy_read_struct(&png_ptr, NULL, NULL);
 		return NULL;
 	}
 	Image* image = (Image*) malloc(sizeof(Image));
@@ -102,24 +201,24 @@ Image* loadPngImageImpl(png_structp png_ptr)
 	png_set_strip_16(png_ptr);
 	png_set_packing(png_ptr);
 	if (color_type == PNG_COLOR_TYPE_PALETTE) png_set_palette_to_rgb(png_ptr);
-	if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) png_set_gray_1_2_4_to_8(png_ptr);
+	if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) png_set_expand_gray_1_2_4_to_8(png_ptr);
 	if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) png_set_tRNS_to_alpha(png_ptr);
 	png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
 	image->data = (Color*) memalign(16, image->textureWidth * image->textureHeight * sizeof(Color));
 	if (!image->data) {
 		free(image);
-		png_destroy_read_struct(&png_ptr, png_infopp_NULL, png_infopp_NULL);
+		png_destroy_read_struct(&png_ptr, NULL, NULL);
 		return NULL;
 	}
 	line = (u32*) malloc(width * 4);
 	if (!line) {
 		free(image->data);
 		free(image);
-		png_destroy_read_struct(&png_ptr, png_infopp_NULL, png_infopp_NULL);
+		png_destroy_read_struct(&png_ptr, NULL, NULL);
 		return NULL;
 	}
 	for (y = 0; y < height; y++) {
-		png_read_row(png_ptr, (u8*) line, png_bytep_NULL);
+		png_read_row(png_ptr, (u8*) line, NULL);
 		for (x = 0; x < width; x++) {
 			u32 color = line[x];
 			image->data[x + y * image->textureWidth] =  color;
@@ -127,7 +226,7 @@ Image* loadPngImageImpl(png_structp png_ptr)
 	}
 	free(line);
 	png_read_end(png_ptr, info_ptr);
-	png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+	png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 	return image;
 }
 
@@ -397,7 +496,7 @@ void blitImageToScreen(int sx, int sy, int width, int height, Image* source, int
 	Color* vram = getVramDrawBuffer();
 	sceKernelDcacheWritebackInvalidateAll();
 	guStart();
-	sceGuCopyImage(GU_PSM_8888, sx, sy, width, height, source->textureWidth, source->data, dx, dy, PSP_LINE_SIZE, vram);
+	sceGuCopyImage(GU_PSM_8888, sx, sy, width, height, source->textureWidth, source->data, dx, dy, LINE_SIZE, vram);
 	sceGuFinish();
 	sceGuSync(0,0);
 }
@@ -528,9 +627,9 @@ void fillImageRect(Color color, int x0, int y0, int width, int height, Image* im
 void fillScreenRect(Color color, int x0, int y0, int width, int height)
 {
 	if (!initialized) return;
-	int skipX = PSP_LINE_SIZE - width;
+	int skipX = LINE_SIZE - width;
 	int x, y;
-	Color* data = getVramDrawBuffer() + x0 + y0 * PSP_LINE_SIZE;
+	Color* data = getVramDrawBuffer() + x0 + y0 * LINE_SIZE;
 	for (y = 0; y < height; y++, data += skipX) {
 		for (x = 0; x < width; x++, data++) *data = color;
 	}
@@ -539,7 +638,7 @@ void fillScreenRect(Color color, int x0, int y0, int width, int height)
 void putPixelScreen(Color color, int x, int y)
 {
 	Color* vram = getVramDrawBuffer();
-	vram[PSP_LINE_SIZE * y + x] = color;
+	vram[LINE_SIZE * y + x] = color;
 }
 
 void putPixelImage(Color color, int x, int y, Image* image)
@@ -550,7 +649,7 @@ void putPixelImage(Color color, int x, int y, Image* image)
 Color getPixelScreen(int x, int y)
 {
 	Color* vram = getVramDrawBuffer();
-	return vram[PSP_LINE_SIZE * y + x];
+	return vram[LINE_SIZE * y + x];
 }
 
 Color getPixelImage(int x, int y, Image* image)
@@ -564,14 +663,14 @@ void printTextScreen(int x, int y, const char* text, u32 color)
 	u8 *font;
 	Color *vram_ptr;
 	Color *vram;
-	
+
 	if (!initialized) return;
 
 	for (size_t c = 0; c < strlen(text); c++) {
 		if (x < 0 || x + 8 > SCREEN_WIDTH || y < 0 || y + 8 > SCREEN_HEIGHT) break;
 		char ch = text[c];
-		vram = getVramDrawBuffer() + x + y * PSP_LINE_SIZE;
-		
+		vram = getVramDrawBuffer() + x + y * LINE_SIZE;
+
 		font = &msx[ (int)ch * 8];
 		for (i = l = 0; i < 8; i++, l += 8, font++) {
 			vram_ptr  = vram;
@@ -579,7 +678,7 @@ void printTextScreen(int x, int y, const char* text, u32 color)
 				if ((*font & (128 >> j))) *vram_ptr = color;
 				vram_ptr++;
 			}
-			vram += PSP_LINE_SIZE;
+			vram += LINE_SIZE;
 		}
 		x += 8;
 	}
@@ -591,14 +690,14 @@ void printTextImage(int x, int y, const char* text, u32 color, Image* image)
 	u8 *font;
 	Color *data_ptr;
 	Color *data;
-	
+
 	if (!initialized) return;
 
 	for (size_t c = 0; c < strlen(text); c++) {
 		if (x < 0 || x + 8 > image->imageWidth || y < 0 || y + 8 > image->imageHeight) break;
 		char ch = text[c];
 		data = image->data + x + y * image->textureWidth;
-		
+
 		font = &msx[ (int)ch * 8];
 		for (i = l = 0; i < 8; i++, l += 8, font++) {
 			data_ptr  = data;
@@ -621,11 +720,13 @@ static void fontPrintTextImpl(FT_Bitmap* bitmap, int xofs, int yofs, Color color
 	
 	u8* line = bitmap->buffer;
 	Color* fbLine = framebuffer + xofs + yofs * lineSize;
-	for (int y = 0; y < bitmap->rows; y++) {
+	for (unsigned int y = 0; y < bitmap->rows; y++) {
 		u8* column = line;
 		Color* fbColumn = fbLine;
-		for (int x = 0; x < bitmap->width; x++) {
-			if (x + xofs < width && x + xofs >= 0 && y + yofs < height && y + yofs >= 0) {
+		for (unsigned int x = 0; x < bitmap->width; x++) {
+			int px = (int)x + xofs;
+			int py = (int)y + yofs;
+			if (px >= 0 && px < width && py >= 0 && py < height) {
 				u8 val = *column;
 				color = *fbColumn;
 				u8 r = color & 0xff; 
@@ -653,7 +754,7 @@ void fontPrintTextImage(FT_Bitmap* bitmap, int x, int y, Color color, Image* ima
 
 void fontPrintTextScreen(FT_Bitmap* bitmap, int x, int y, Color color)
 {
-	fontPrintTextImpl(bitmap, x, y, color, getVramDrawBuffer(), SCREEN_WIDTH, SCREEN_HEIGHT, PSP_LINE_SIZE);
+	fontPrintTextImpl(bitmap, x, y, color, getVramDrawBuffer(), SCREEN_WIDTH, SCREEN_HEIGHT, LINE_SIZE);
 }
 
 void saveImage(const char* filename, Color* data, int width, int height, int lineSize, int saveAlpha)
@@ -789,7 +890,7 @@ static void drawLine(int x0, int y0, int x1, int y1, int color, Color* destinati
 
 void drawLineScreen(int x0, int y0, int x1, int y1, Color color)
 {
-	drawLine(x0, y0, x1, y1, color, getVramDrawBuffer(), PSP_LINE_SIZE);
+	drawLine(x0, y0, x1, y1, color, getVramDrawBuffer(), LINE_SIZE);
 }
 
 void drawLineImage(int x0, int y0, int x1, int y1, Color color, Image* image)
@@ -811,10 +912,10 @@ void initGraphics()
 	sceGuInit();
 
 	guStart();
-	sceGuDrawBuffer(GU_PSM_8888, (void*)FRAMEBUFFER_SIZE, PSP_LINE_SIZE);
-	sceGuDispBuffer(SCREEN_WIDTH, SCREEN_HEIGHT, (void*)0, PSP_LINE_SIZE);
+	sceGuDrawBuffer(GU_PSM_8888, (void*)FRAMEBUFFER_SIZE, LINE_SIZE);
+	sceGuDispBuffer(SCREEN_WIDTH, SCREEN_HEIGHT, (void*)0, LINE_SIZE);
 	sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
-	sceGuDepthBuffer((void*) (FRAMEBUFFER_SIZE*2), PSP_LINE_SIZE);
+	sceGuDepthBuffer((void*) (FRAMEBUFFER_SIZE*2), LINE_SIZE);
 	sceGuOffset(2048 - (SCREEN_WIDTH / 2), 2048 - (SCREEN_HEIGHT / 2));
 	sceGuViewport(2048, 2048, SCREEN_WIDTH, SCREEN_HEIGHT);
 	sceGuDepthRange(0xc350, 0x2710);

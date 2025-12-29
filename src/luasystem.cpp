@@ -1,16 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
-#include <pspkernel.h>
-
-#include <pspusb.h>
-#include <pspusbstor.h>
-#include <psppower.h>
-#include <pspdebug.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include "luaplayer.h"
-
-#define SIO_IOCTL_SET_BAUD_RATE 1
 
 static int usbActivated = 0;
 static SceUID sio_fd = -1;
@@ -82,7 +74,7 @@ static int lua_dir(lua_State *L)
 			lua_settable(L, -3);
 	
 			lua_pushstring(L, "directory");
-			lua_pushboolean(L, FIO_S_ISDIR(g_dir.d_stat.st_mode));
+			lua_pushboolean(L, (g_dir.d_stat.st_attr & FIO_SO_IFDIR) != 0);
 			lua_settable(L, -3);
 
 		lua_settable(L, -3);
@@ -130,13 +122,12 @@ static int lua_rename(lua_State *L)
 	if(!oldName || !newName)
 		return luaL_error(L, "Argument error: System.rename(source, destination) takes two filenames as strings as arguments.");
 
-	// TODO: looks like the stdio "rename" doesn't work
-	sceIoRename(oldName, newName);
+	rename(oldName, newName);
 	
 	return 0;
 }
 
-static int LoadStartModule(char *path)
+static int LoadStartModule(const char *path)
 {
 	u32 loadResult;
 	u32 startResult;
@@ -180,7 +171,7 @@ static int lua_loadModule(lua_State *L)
 		lua_CFunction f = (lua_CFunction) *(findFunction( uid, name, init )); 
 		if (f != NULL)
 		{
-			lua_pushlightuserdata(L,(void*)uid);
+			lua_pushlightuserdata(L,(void*)(intptr_t)uid);
 			lua_pushcclosure(L,f,1);
 			return 1;
 		}
@@ -208,12 +199,12 @@ static int lua_usbActivate(lua_State *L)
 		LoadStartModule("flash0:/kd/usbstorboot.prx"); 
 	
 		//setup USB drivers 
-		int retVal = sceUsbStart(PSP_USBBUS_DRIVERNAME, 0, 0); 
+		int retVal = sceUsbStart(USB_BUS_DRIVERNAME, 0, 0); 
 		if (retVal != 0) { 
 			printf("Error starting USB Bus driver (0x%08X)\n", retVal); 
 			sceKernelSleepThread(); 
 		}
-		retVal = sceUsbStart(PSP_USBSTOR_DRIVERNAME, 0, 0); 
+		retVal = sceUsbStart(USB_STOR_DRIVERNAME, 0, 0); 
 		if (retVal != 0) { 
 			printf("Error starting USB Mass Storage driver (0x%08X)\n", retVal); 
 			sceKernelSleepThread(); 
@@ -236,7 +227,7 @@ static int lua_usbDeactivate(lua_State *L)
 	if (lua_gettop(L) != 0) return luaL_error(L, "wrong number of arguments");
 	if (!usbActivated) return 0;
 
-	sceUsbDeactivate( 0 );  // what value here?
+	sceUsbDeactivate();
 	usbActivated = 0;
 	return 0;
 }
@@ -332,8 +323,8 @@ static int lua_md5sum(lua_State *L)
 static int lua_sioInit(lua_State *L)
 {
 	if (lua_gettop(L) != 1) return luaL_error(L, "baud rate expected.");
-	int baudRate = luaL_checkint(L, 1);
-	if (sio_fd < 0) sio_fd = sceIoOpen("sio:", PSP_O_RDWR, 0);
+	int baudRate = (int)luaL_checknumber(L, 1);
+	if (sio_fd < 0) sio_fd = sceIoOpen("sio:", IO_O_RDWR, 0);
 	if (sio_fd < 0) return luaL_error(L, "failed create SIO handle.");
 	sceIoIoctl(sio_fd, SIO_IOCTL_SET_BAUD_RATE, &baudRate, sizeof(baudRate), NULL, 0);
 	
@@ -369,7 +360,7 @@ static int lua_sioRead(lua_State *L)
 static int lua_irdaInit(lua_State *L)
 {
 	if (lua_gettop(L) != 0) return luaL_error(L, "no arguments expected.");
-	if (irda_fd < 0) irda_fd = sceIoOpen("irda0:", PSP_O_RDWR, 0);
+	if (irda_fd < 0) irda_fd = sceIoOpen("irda0:", IO_O_RDWR, 0);
 	if (irda_fd < 0) return luaL_error(L, "failed create IRDA handle.");
 	
 	return 0;
@@ -404,7 +395,7 @@ static int lua_irdaRead(lua_State *L)
 static int lua_sleep(lua_State *L)
 {
 	if (lua_gettop(L) != 1) return luaL_error(L, "milliseconds expected.");
-	int milliseconds = luaL_checkint(L, 1);
+	int milliseconds = (int)luaL_checknumber(L, 1);
 	sceKernelDelayThread(milliseconds * 1000);
 	return 0;
 }
@@ -428,7 +419,7 @@ static int lua_getFreeMemory(lua_State *L)
 	return 1;
 }
 
-static const luaL_reg System_functions[] = {
+static const luaL_Reg System_functions[] = {
   {"currentDirectory",              lua_curdir},
   {"listDirectory",           	    lua_dir},
   {"createDirectory",               lua_createDir},
@@ -460,7 +451,8 @@ static const luaL_reg System_functions[] = {
 };
 void luaSystem_init(lua_State *L) {
 	setModulePath();
-	luaL_openlib(L, "System", System_functions, 0);
+	luaL_newlib(L, System_functions);
+	lua_setglobal(L, "System");
 	lua_register(L, "loadlib", lua_loadModule);
 }
 

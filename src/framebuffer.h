@@ -1,8 +1,8 @@
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
 
-#include <psptypes.h>
+#include "platform/platform.h"
 
-extern u32* g_vram_base;
+/* g_vram_base is declared in platform.h */
 
 #endif

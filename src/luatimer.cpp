@@ -1,6 +1,5 @@
 #include <time.h>
 #include <stdlib.h>
-#include <pspdisplay.h>
 #include "luaplayer.h"
 
 // if the timer is running:
@@ -33,7 +32,7 @@ static int Timer_new(lua_State *L)
 	Timer* timer = (Timer*) malloc(sizeof(Timer));
 	*luaTimer = timer;
 	timer->measuredTime = getCurrentMilliseconds();
-	timer->offset = argc == 1 ? luaL_checkint(L, 1) : 0;
+	timer->offset = argc == 1 ? (int)luaL_checknumber(L, 1) : 0;
 	return 1;
 }
 
@@ -103,7 +102,7 @@ static int Timer_reset(lua_State *L)
 		// timer is stopped
 		lua_pushnumber(L, timer->offset);
 	}
-	timer->offset = argc == 2 ? luaL_checkint(L, 2) : 0;
+	timer->offset = argc == 2 ? (int)luaL_checknumber(L, 2) : 0;
 	timer->measuredTime = 0;
 	return 1;
 }
@@ -131,7 +130,7 @@ static int Timer_tostring (lua_State *L)
 	return 1;
 }
 
-static const luaL_reg Timer_methods[] = {
+static const luaL_Reg Timer_methods[] = {
 	{"new", Timer_new},
 	{"start", Timer_start},
 	{"time", Timer_time},
@@ -140,7 +139,7 @@ static const luaL_reg Timer_methods[] = {
 	{0,0}
 };
 
-static const luaL_reg Timer_meta[] = {
+static const luaL_Reg Timer_meta[] = {
 	{"__gc", Timer_free},
 	{"__tostring", Timer_tostring},
 	{0,0}

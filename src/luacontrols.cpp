@@ -1,9 +1,7 @@
 #include <stdlib.h>
 #include "luaplayer.h"
 
-#include <pspctrl.h>
-
-typedef SceCtrlData Controls;
+typedef CtrlData Controls;
 
 // The "Controls" userdata object.
 // ------------------------------
@@ -22,7 +20,7 @@ static int Controls_read(lua_State *L)
 	int argc = lua_gettop(L);
 	if(argc) return luaL_error(L, "Argument error: Controls.read() cannot be called from an instance.");
 	Controls* pad = pushControls(L);
-	sceCtrlReadBufferPositive(pad, 1); 
+	ctrlReadBufferPositive(pad, 1);
 	return 1;
 }
 
@@ -37,21 +35,21 @@ static int NAME(lua_State *L) \
 	return 1; \
 }
 
-CHECK_CTRL(Controls_select, PSP_CTRL_SELECT)
-CHECK_CTRL(Controls_start, PSP_CTRL_START)
-CHECK_CTRL(Controls_up, PSP_CTRL_UP)
-CHECK_CTRL(Controls_right, PSP_CTRL_RIGHT)
-CHECK_CTRL(Controls_down, PSP_CTRL_DOWN)
-CHECK_CTRL(Controls_left, PSP_CTRL_LEFT)
-CHECK_CTRL(Controls_l, PSP_CTRL_LTRIGGER)
-CHECK_CTRL(Controls_r, PSP_CTRL_RTRIGGER)
-CHECK_CTRL(Controls_triangle, PSP_CTRL_TRIANGLE)
-CHECK_CTRL(Controls_circle, PSP_CTRL_CIRCLE)
-CHECK_CTRL(Controls_cross, PSP_CTRL_CROSS)
-CHECK_CTRL(Controls_square, PSP_CTRL_SQUARE)
-CHECK_CTRL(Controls_home, PSP_CTRL_HOME)
-CHECK_CTRL(Controls_hold, PSP_CTRL_HOLD)
-CHECK_CTRL(Controls_note, PSP_CTRL_NOTE)
+CHECK_CTRL(Controls_select, CTRL_SELECT)
+CHECK_CTRL(Controls_start, CTRL_START)
+CHECK_CTRL(Controls_up, CTRL_UP)
+CHECK_CTRL(Controls_right, CTRL_RIGHT)
+CHECK_CTRL(Controls_down, CTRL_DOWN)
+CHECK_CTRL(Controls_left, CTRL_LEFT)
+CHECK_CTRL(Controls_l, CTRL_LTRIGGER)
+CHECK_CTRL(Controls_r, CTRL_RTRIGGER)
+CHECK_CTRL(Controls_triangle, CTRL_TRIANGLE)
+CHECK_CTRL(Controls_circle, CTRL_CIRCLE)
+CHECK_CTRL(Controls_cross, CTRL_CROSS)
+CHECK_CTRL(Controls_square, CTRL_SQUARE)
+CHECK_CTRL(Controls_home, CTRL_HOME)
+CHECK_CTRL(Controls_hold, CTRL_HOLD)
+CHECK_CTRL(Controls_note, CTRL_NOTE)
 
 static int Controls_buttons(lua_State *L)
 {
@@ -84,7 +82,7 @@ static int Controls_equal(lua_State *L) {
 }
 
 	
-static const luaL_reg Controls_methods[] = {
+static const luaL_Reg Controls_methods[] = {
 	{"read",          	Controls_read},
 	{"select", Controls_select },
 	{"start", Controls_start },
@@ -106,14 +104,14 @@ static const luaL_reg Controls_methods[] = {
 	{"buttons", Controls_buttons },
   {0, 0}
 };
-static const luaL_reg Controls_meta[] = {
+static const luaL_Reg Controls_meta[] = {
   {"__tostring", Controls_tostring},
   {"__eq", Controls_equal},
   {0, 0}
 };
 UserdataRegister(Controls, Controls_methods, Controls_meta)
 
-void setTableValue(lua_State *L, char* name, int value)
+void setTableValue(lua_State *L, const char* name, int value)
 {
 	lua_pushstring(L, name);
 	lua_pushnumber(L, value);
@@ -121,24 +119,23 @@ void setTableValue(lua_State *L, char* name, int value)
 }
 
 void luaControls_init(lua_State *L) {
-	sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
+	ctrlSetSamplingMode(CTRL_MODE_ANALOG);
 	Controls_register(L);
 
-	lua_pushstring(L, "Controls");
-	lua_gettable(L, LUA_GLOBALSINDEX); \
-	setTableValue(L, "selectMask", PSP_CTRL_SELECT);
-	setTableValue(L, "startMask", PSP_CTRL_START);
-	setTableValue(L, "upMask", PSP_CTRL_UP);
-	setTableValue(L, "rightMask", PSP_CTRL_RIGHT);
-	setTableValue(L, "downMask", PSP_CTRL_DOWN);
-	setTableValue(L, "leftMask", PSP_CTRL_LEFT);
-	setTableValue(L, "ltriggerMask", PSP_CTRL_LTRIGGER);
-	setTableValue(L, "rtriggerMask", PSP_CTRL_RTRIGGER);
-	setTableValue(L, "triangleMask", PSP_CTRL_TRIANGLE);
-	setTableValue(L, "circleMask", PSP_CTRL_CIRCLE);
-	setTableValue(L, "crossMask", PSP_CTRL_CROSS);
-	setTableValue(L, "squareMask", PSP_CTRL_SQUARE);
-	setTableValue(L, "homeMask", PSP_CTRL_HOME);
-	setTableValue(L, "holdMask", PSP_CTRL_HOLD);
-	setTableValue(L, "noteMask", PSP_CTRL_NOTE);
+	lua_getglobal(L, "Controls");
+	setTableValue(L, "selectMask", CTRL_SELECT);
+	setTableValue(L, "startMask", CTRL_START);
+	setTableValue(L, "upMask", CTRL_UP);
+	setTableValue(L, "rightMask", CTRL_RIGHT);
+	setTableValue(L, "downMask", CTRL_DOWN);
+	setTableValue(L, "leftMask", CTRL_LEFT);
+	setTableValue(L, "ltriggerMask", CTRL_LTRIGGER);
+	setTableValue(L, "rtriggerMask", CTRL_RTRIGGER);
+	setTableValue(L, "triangleMask", CTRL_TRIANGLE);
+	setTableValue(L, "circleMask", CTRL_CIRCLE);
+	setTableValue(L, "crossMask", CTRL_CROSS);
+	setTableValue(L, "squareMask", CTRL_SQUARE);
+	setTableValue(L, "homeMask", CTRL_HOME);
+	setTableValue(L, "holdMask", CTRL_HOLD);
+	setTableValue(L, "noteMask", CTRL_NOTE);
 }

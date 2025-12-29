@@ -4,17 +4,18 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#include <psptypes.h>
+#include "platform/platform.h"
 
-#define	PSP_LINE_SIZE 512
-#define SCREEN_WIDTH 480
-#define SCREEN_HEIGHT 272
+/* Use platform-defined constants and types */
+#define	LINE_SIZE        PLATFORM_LINE_SIZE
+#define SCREEN_WIDTH     PLATFORM_SCREEN_WIDTH
+#define SCREEN_HEIGHT    PLATFORM_SCREEN_HEIGHT
 
-typedef u32 Color;
-#define A(color) ((u8)(color >> 24 & 0xFF))
-#define B(color) ((u8)(color >> 16 & 0xFF))
-#define G(color) ((u8)(color >> 8 & 0xFF))
-#define R(color) ((u8)(color & 0xFF))
+/* Color is defined in platform.h */
+#define A(color) COLOR_A(color)
+#define B(color) COLOR_B(color)
+#define G(color) COLOR_G(color)
+#define R(color) COLOR_R(color)
 
 typedef struct
 {
@@ -285,7 +286,7 @@ extern void fontPrintTextScreen(FT_Bitmap* bitmap, int x, int y, Color color);
  * @param data - start of Color type pixel data (can be getVramDisplayBuffer())
  * @param width - logical width of the image or SCREEN_WIDTH
  * @param height - height of the image or SCREEN_HEIGHT
- * @param lineSize - physical width of the image or PSP_LINE_SIZE
+ * @param lineSize - physical width of the image or LINE_SIZE
  * @param saveAlpha - if 0, image is saved without alpha channel
  */
 extern void saveImage(const char* filename, Color* data, int width, int height, int lineSize, int saveAlpha);
@@ -298,7 +299,7 @@ extern void saveImage(const char* filename, Color* data, int width, int height, 
  * @param data - start of Color type pixel data (can be getVramDisplayBuffer())
  * @param width - logical width of the image or SCREEN_WIDTH
  * @param height - height of the image or SCREEN_HEIGHT
- * @param lineSize - physical width of the image or PSP_LINE_SIZE
+ * @param lineSize - physical width of the image or LINE_SIZE
  * @param saveAlpha - if 0, image is saved without alpha channel
  */
 extern void savePngImage(const char* filename, Color* data, int width, int height, int lineSize, int saveAlpha);
@@ -311,7 +312,7 @@ extern void savePngImage(const char* filename, Color* data, int width, int heigh
  * @param data - start of Color type pixel data (can be getVramDisplayBuffer())
  * @param width - logical width of the image or SCREEN_WIDTH
  * @param height - height of the image or SCREEN_HEIGHT
- * @param lineSize - physical width of the image or PSP_LINE_SIZE
+ * @param lineSize - physical width of the image or LINE_SIZE
  */
 extern void saveJpegImage(const char* filename, Color* data, int width, int height, int lineSize);
 
